@@ -37,7 +37,7 @@ var intents = new builder.IntentDialog({ recognizers: [recognizer] })
 .matches('greeting', (session, args) => {
     session.send('Hello there!');
 })
-.matches('address-change', [
+.matches('addresschange', [
     function (session) {
         session.beginDialog('/addresschange');
     },
