@@ -58,6 +58,27 @@ bot.dialog('/addresschange', [
     function(session, args, next) {
         builder.Prompts.text(session, 'Sure address change it is..whose address you would like to change?');
     },
+     function (session, args, next) {
+        // Resolve and store any entities passed from LUIS.
+        session.send('Sure address change it is..whose address you would like to change?');
+        var intent = args.intent;
+        var who = builder.EntityRecognizer.findEntity(intent.entities, 'addresschange.forwho');
+        var relation = builder.EntityRecognizer.findEntity(intent.entities, 'addresschange.forwho');
+    
+        // var alarm = session.dialogData.alarm = {
+        //   title: title ? title.entity : null,
+        //   timestamp: time ? time.getTime() : null  
+        // };
+        
+        // Prompt for title
+        if (!alarm.who) {
+            builder.Prompts.text(session, 'Whose address needs a change?');
+        } else {
+            if(who =="my")
+             session.send('Changing your address...');
+            next();
+        }
+    },
     function(session, results) {
         session.endDialog();
     }
