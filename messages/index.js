@@ -50,18 +50,13 @@ var bot = new builder.UniversalBot(connector, function (session) {
     if (session.userData.notification != null) {
         return session.beginDialog('main:/');
     } else {
-        var welcomeCard = new builder.HeroCard(session)
-            .title('April Assistance')
-            .subtitle('Your professional assistant')
-            .images([
-                new builder.CardImage(session)
-                .url('http://www.mecoms.com/sites/default/files/Tata-Transparent-(Large).png')
-                .alt('Tata Consultancy Services')
-            ])
-            .buttons([
-                builder.CardAction.imBack(session, session.gettext(MainOptions.Settings), MainOptions.Settings),
-                builder.CardAction.imBack(session, session.gettext(MainOptions.Support), MainOptions.Support)
-            ]);
+        var welcomeCard =  new builder.AnimationCard(session)
+        .title('Microsoft Bot Framework')
+        .subtitle('Animation Card')
+        .image(builder.CardImage.create(session, 'https://docs.botframework.com/en-us/images/faq-overview/botframework_overview_july.png'))
+        .media([
+            { url: 'http://i.giphy.com/Ki55RUbOV5njy.gif' }
+        ]);
         session.userData.notification = 'done';
         session.send(new builder.Message(session)
             .addAttachment(welcomeCard));
