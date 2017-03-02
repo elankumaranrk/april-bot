@@ -54,10 +54,8 @@ var bot = new builder.UniversalBot(connector, function (session) {
 
         var notificationCard = new builder.HeroCard(session)
             .title('Hello')
-            .subtitle(getFormattedDate(new Date()))
-            .text(`1. **The Space Needle is an observation** \n\n
-
-             --- tower 2. in Seattle, Washington, a landmark of the Pacific Northwest, and an icon of Seattle.` )
+            .subtitle(getFormattedDate(new Date())) 
+            .text("Here are your personalized messages for the day!" )
             .images([
                 new builder.CardImage(session)
                 .url('https://blog.malwarebytes.com/wp-content/uploads/2014/04/photodune-7137346-web-design-concept-update-on-computer-keyboard-background-s-900x506.jpg')
@@ -67,6 +65,8 @@ var bot = new builder.UniversalBot(connector, function (session) {
 
         session.send(new builder.Message(session)
             .addAttachment(notificationCard));
+        session.send("Total Commissions earned so far this week:   \n\n 1. New Business: **$3223.00** \n 2. Inforce Premium:**$2.00**");
+        session.send("Pending Trainings:\n\n 1. Insurance Agent Licensing for Life & Annuity \n 2. Adjuster Licensing");
 
         var welcomeCard = new builder.HeroCard(session)
             .title('April Bot')
