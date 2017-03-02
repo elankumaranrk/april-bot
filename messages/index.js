@@ -27,6 +27,11 @@ var luisAPIHostName = process.env.LuisAPIHostName || 'api.projectoxford.ai';
 
 const LuisModelUrl = 'https://' + luisAPIHostName + '/luis/v2.0/apps/' + luisAppId + '?subscription-key=' + luisAPIKey;
 
+// Welcome Dialog
+var MainOptions = {
+    Shop: 'main_options_order_flowers',
+    Support: 'main_options_talk_to_support'
+};
 
 // Main dialog with LUIS
 var recognizer = new builder.LuisRecognizer(LuisModelUrl);
