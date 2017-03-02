@@ -40,8 +40,9 @@ if (useEmulator) {
 
 // Welcome Dialog
 var MainOptions = {
-    Settings: 'Settings',
-    Support: 'Help'
+    Product: 'Product Info',
+    Service: 'Self Services',
+    Support: 'Support'
 };
 
 
@@ -50,17 +51,39 @@ var bot = new builder.UniversalBot(connector, function (session) {
     if (session.userData.notification != null) {
         return session.beginDialog('main:/');
     } else {
-        var welcomeCard =  new builder.AnimationCard(session)
-        .title('Microsoft Bot Framework')
-        .subtitle('Animation Card')
-        .image(builder.CardImage.create(session, 'https://docs.botframework.com/en-us/images/faq-overview/botframework_overview_july.png'))
-        .media([
-            { url: 'http://i.giphy.com/Ki55RUbOV5njy.gif' }
-        ]);
+
+        var notificationCard = new builder.HeroCard(session)
+            .title('Hello')
+            .subtitle(getFormattedDate(new Date()))
+            .text("The Space Needle \n is an observation tower in Seattle, Washington, a landmark of the Pacific Northwest, and an icon of Seattle." )
+            .images([
+                new builder.CardImage(session)
+                .url('https://blog.malwarebytes.com/wp-content/uploads/2014/04/photodune-7137346-web-design-concept-update-on-computer-keyboard-background-s-900x506.jpg')
+                .alt('Notifications')
+            ])
+            .tap(builder.CardAction.openUrl(session, "https://www.google.com/search?q=1+min+timer"));
+
+        session.send(new builder.Message(session)
+            .textFormat(builder.TextFormat.markdown)
+            .addAttachment(notificationCard));
+
+        var welcomeCard = new builder.HeroCard(session)
+            .title('April Bot')
+            .subtitle('How may I help you today?')
+            .images([
+                new builder.CardImage(session)
+                .url('https://blogs-images.forbes.com/jacobmorgan/files/2014/05/internet-of-things-2.jpg')
+                .alt('Tata Consultancy Services')
+            ])
+            .buttons([
+                builder.CardAction.imBack(session, session.gettext(MainOptions.Product), MainOptions.Product),
+                builder.CardAction.imBack(session, session.gettext(MainOptions.Service), MainOptions.Service),
+                builder.CardAction.imBack(session, session.gettext(MainOptions.Support), MainOptions.Support)
+            ]);
         session.userData.notification = 'done';
         session.send(new builder.Message(session)
             .addAttachment(welcomeCard));
-        //send additional notifications to the user
+
     }
 });
 
@@ -153,3 +176,24 @@ bot.dialog('/addresschange', [
 
 ])
 
+function getFormattedDate(today) {
+    var week = new Array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
+    var day = week[today.getDay()];
+    var dd = today.getDate();
+    var mm = today.getMonth() + 1; //January is 0!
+    var yyyy = today.getFullYear();
+    var hour = today.getHours();
+    var minu = today.getMinutes();
+
+    if (dd < 10) {
+        dd = '0' + dd
+    }
+    if (mm < 10) {
+        mm = '0' + mm
+    }
+    if (minu < 10) {
+        minu = '0' + minu
+    }
+
+    return "Today, " + day + ' - ' + dd + '/' + mm + '/' + yyyy + ' ' + hour + ':' + minu + " HRS";
+}
