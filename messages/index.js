@@ -35,7 +35,21 @@ var intents = new builder.IntentDialog({ recognizers: [recognizer] })
     session.send('Hi! This is the None intent handler. You said: \'%s\'.' + luisAppId, session.message.text);
 })
 .matches('greeting', (session, args) => {
-    session.send('Hello there!');
+    var welcomeCard = new builder.HeroCard(session)
+        .title('welcome_title')
+        .subtitle('welcome_subtitle')
+        .images([
+            new builder.CardImage(session)
+                .url('https://placeholdit.imgix.net/~text?txtsize=56&txt=Contoso%20Flowers&w=640&h=330')
+                .alt('contoso_flowers')
+        ])
+        .buttons([
+            builder.CardAction.imBack(session, session.gettext(MainOptions.Shop), MainOptions.Shop),
+            builder.CardAction.imBack(session, session.gettext(MainOptions.Support), MainOptions.Support)
+        ]);
+
+    session.send(new builder.Message(session)
+        .addAttachment(welcomeCard));
 })
 .matches('addresschange', [
     function (session) {
@@ -55,9 +69,6 @@ var intents = new builder.IntentDialog({ recognizers: [recognizer] })
 bot.dialog('/', intents);   
 
 bot.dialog('/addresschange', [
-    function(session, args, next) {
-        builder.Prompts.text(session, 'Sure address change it is..whose address you would like to change?');
-    },
      function (session, args, next) {
         // Resolve and store any entities passed from LUIS.
         session.send('Sure address change it is..whose address you would like to change?');
