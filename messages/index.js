@@ -55,7 +55,9 @@ var bot = new builder.UniversalBot(connector, function (session) {
         var notificationCard = new builder.HeroCard(session)
             .title('Hello')
             .subtitle(getFormattedDate(new Date()))
-            .text("The Space Needle \n is an observation tower in Seattle, Washington, a landmark of the Pacific Northwest, and an icon of Seattle." )
+            .text(`1. **The Space Needle is an observation** \n\n
+
+             --- tower 2. in Seattle, Washington, a landmark of the Pacific Northwest, and an icon of Seattle.` )
             .images([
                 new builder.CardImage(session)
                 .url('https://blog.malwarebytes.com/wp-content/uploads/2014/04/photodune-7137346-web-design-concept-update-on-computer-keyboard-background-s-900x506.jpg')
@@ -64,7 +66,6 @@ var bot = new builder.UniversalBot(connector, function (session) {
             .tap(builder.CardAction.openUrl(session, "https://www.google.com/search?q=1+min+timer"));
 
         session.send(new builder.Message(session)
-            .textFormat(builder.TextFormat.markdown)
             .addAttachment(notificationCard));
 
         var welcomeCard = new builder.HeroCard(session)
