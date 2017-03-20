@@ -4,9 +4,13 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "@google-cloud/vision": "^0.10.0",
+    "bluebird": "^3.4.7",
     "botbuilder": "^3.4.2",
     "botbuilder-azure": "0.0.1",
     "botbuilder-location": "^1.0.4",
+    "dotenv-extended": "^1.0.4",
+    "request": "^2.79.0",
     "restify": "^4.3.0"
   },
   "devDependencies": {

@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [{
+        "name": "Launch",
+        "type": "node",
+        "request": "launch",
+        "program": "${workspaceRoot}/messages/index.js",
+        "cwd": "${workspaceRoot}",
+        "env": {
+            "NODE_ENV": "development",
+            "LuisAppId": "1a002f66-ebf2-4f7a-a2bb-61b41907342b",
+            "LuisAPIKey": "3e3d8f4c72144829a048b7af57d90f7b"
+        }
+    }]
+}

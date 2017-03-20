@@ -1,12 +1,17 @@
-/*-----------------------------------------------------------------------------
-This template demonstrates how to use an IntentDialog with a LuisRecognizer to add 
-natural language support to a bot. 
-For a complete walkthrough of creating this type of bot see the article at
-http://docs.botframework.com/builder/node/guides/understanding-natural-language/
------------------------------------------------------------------------------*/
 "use strict";
 var builder = require("botbuilder");
+var Promise = require('bluebird');
+var request = require('request-promise').defaults({
+    encoding: null
+});
 var botbuilder_azure = require("botbuilder-azure");
+var spellService = require('./services/spell-service');
+var vision = require('@google-cloud/vision')({
+    projectId: 'april-web',
+    keyFilename: './april-web-20e6c722e711.json'
+});
+var locationDialog = require('botbuilder-location');
+var states = ['MN']; //add all states later on.
 
 var useEmulator = (process.env.NODE_ENV == 'development');
 var connector = useEmulator ? new builder.ChatConnector() : new botbuilder_azure.BotServiceConnector({
@@ -20,9 +25,9 @@ var connector = useEmulator ? new builder.ChatConnector() : new botbuilder_azure
 var luisAppId = process.env.LuisAppId;
 var luisAPIKey = process.env.LuisAPIKey;
 var luisAPIHostName = process.env.LuisAPIHostName || 'api.projectoxford.ai';
-
 const LuisModelUrl = 'https://' + luisAPIHostName + '/luis/v2.0/apps/' + luisAppId + '?subscription-key=' + luisAPIKey;
-var recognizer = new builder.LuisRecognizer(LuisModelUrl);
+
+
 
 if (useEmulator) {
     var restify = require('restify');
@@ -36,165 +41,256 @@ if (useEmulator) {
         default: connector.listen()
     }
 }
-
-
-// Welcome Dialog
-var MainOptions = {
-    Product: 'Product Info',
-    Service: 'Self Services',
-    Support: 'Support'
+var whichAddress = {
+    Business: 'Business',
+    Residence: 'Residence',
+    Both: 'Both'
 };
 
-
 var bot = new builder.UniversalBot(connector, function (session) {
-
-    if (session.userData.notification != null) {
-        return session.beginDialog('main:/');
-    } else {
-
-        var notificationCard = new builder.HeroCard(session)
-            .title('Hello')
-            .subtitle(getFormattedDate(new Date())) 
-            .text("Here are your personalized messages for the day!" )
-            .images([
-                new builder.CardImage(session)
-                .url('https://blog.malwarebytes.com/wp-content/uploads/2014/04/photodune-7137346-web-design-concept-update-on-computer-keyboard-background-s-900x506.jpg')
-                .alt('Notifications')
-            ])
-            .tap(builder.CardAction.openUrl(session, "https://www.google.com/search?q=1+min+timer"));
-
-        session.send(new builder.Message(session)
-            .addAttachment(notificationCard));
-        session.send("Total Commissions earned so far this week:   \n\n 1. New Business: **$3223.00** \n 2. Inforce Premium:**$2.00**");
-        session.send("Pending Trainings:\n\n 1. Insurance Agent Licensing for Life & Annuity \n 2. Adjuster Licensing");
-
-        var welcomeCard = new builder.HeroCard(session)
-            .title('April Bot')
-            .subtitle('How may I help you today?')
-            .images([
-                new builder.CardImage(session)
-                .url('https://blogs-images.forbes.com/jacobmorgan/files/2014/05/internet-of-things-2.jpg')
-                .alt('Tata Consultancy Services')
-            ])
-            .buttons([
-                builder.CardAction.imBack(session, session.gettext(MainOptions.Product), MainOptions.Product),
-                builder.CardAction.imBack(session, session.gettext(MainOptions.Service), MainOptions.Service),
-                builder.CardAction.imBack(session, session.gettext(MainOptions.Support), MainOptions.Support)
-            ]);
-        session.userData.notification = 'done';
-        session.send(new builder.Message(session)
-            .addAttachment(welcomeCard));
-
-    }
+    session.send('Sorry, I did not understand \'%s\'. Type \'help\' if you need assistance.', session.message.text);
 });
 
-// Enable Conversation Data persistence
-bot.set('persistConversationData', true);
+var recognizer = new builder.LuisRecognizer(LuisModelUrl);
+bot.recognizer(recognizer);
+bot.library(require('./libs/addressChange').createLibrary());
 
-
-// Send welcome when conversation with bot is started, by initiating the root dialog
-bot.on('conversationUpdate', function (message) {
-    if (message.membersAdded) {
-        message.membersAdded.forEach(function (identity) {
-            if (identity.id === message.address.bot.id) {
-                bot.beginDialog(message.address, '/');
-            }
-        });
-    }
-});
-
-// Sub-Dialogs
-bot.library(require('./libs/main').createLibrary());
-bot.library(require('./libs/address').createLibrary());
-
-
-
-var intents = new builder.IntentDialog({
-        recognizers: [recognizer]
-    })
-    .matches('None', (session, args) => {
-        session.send('Hi! This is the None intent handler. You said: \'%s\'.' + luisAppId, session.message.text);
-    })
-    .matches('greeting', (session, args) => {
-        var welcomeCard = new builder.HeroCard(session)
-            .title('welcome_title')
-            .subtitle('welcome_subtitle')
-            .images([
-                new builder.CardImage(session)
-                .url('https://placeholdit.imgix.net/~text?txtsize=56&txt=Contoso%20Flowers&w=640&h=330')
-                .alt('contoso_flowers')
-            ])
-            .buttons([
-                builder.CardAction.imBack(session, session.gettext(MainOptions.Shop), MainOptions.Shop),
-                builder.CardAction.imBack(session, session.gettext(MainOptions.Support), MainOptions.Support)
-            ]);
-
-        session.send(new builder.Message(session)
-            .addAttachment(welcomeCard));
-    })
-    .matches('addresschange', [
-        function (session) {
-            session.beginDialog('/addresschange');
-        },
-        function (session, results) {
-            session.send('Ok... done!');
-        }
-    ])
-    .matches('weather', (session, args) => {
-        session.send('Hmmm weather data has not been hooked up yet!');
-    })
-    .onDefault((session) => {
-        session.send('Sorry, I did not understand \'%s\'.', session.message.text);
-    });
-
-// bot.dialog('/', intents);
-
-bot.dialog('/addresschange', [
+bot.dialog('addresschange', [
     function (session, args, next) {
-        // Resolve and store any entities passed from LUIS.
-        session.send('Sure address change it is..whose address you would like to change?');
-        var intent = args.intent;
-        var who = builder.EntityRecognizer.findEntity(intent.entities, 'addresschange.forwho');
-        var relation = builder.EntityRecognizer.findEntity(intent.entities, 'addresschange.forwho');
+        // session.send('Hello, address update it is!');
 
-        // var alarm = session.dialogData.alarm = {
-        //   title: title ? title.entity : null,
-        //   timestamp: time ? time.getTime() : null  
-        // };
+        // try extracting entities
+        var relation = builder.EntityRecognizer.findEntity(args.intent.entities, 'addresschange.forwho::addresschange.personrelation');
+        var which = builder.EntityRecognizer.findEntity(args.intent.entities, 'busres');
+        var policyNumber = builder.EntityRecognizer.findEntity(args.intent.entities, 'addresschange.forwho::addresschange.policynumber');
 
-        // Prompt for title
-        if (!alarm.who) {
-            builder.Prompts.text(session, 'Whose address needs a change?');
+        if (relation) {
+            // relation detected
+            if (relation.entity == "my") {
+                session.dialogData.addressChangeType = "own";
+                if (which) {
+                    session.send('Okay, let\'s change your ' + which.entity + ' address!');
+                    session.dialogData.ownBusRes = which.entity;
+                    next({
+                        response: which.entity
+                    });
+                } else {
+                    builder.Prompts.choice(
+                        session,
+                        'Sure, but which address specifically?', [whichAddress.Both, whichAddress.Business, whichAddress.Residence], {
+                            maxRetries: 3,
+                            retryPrompt: 'Not a valid option'
+                        });
+                }
+            } else if (relation.entity == "owner" || relation.entity == "insured") {
+                session.dialogData.addressChangeType = relation.entity;
+                if (policyNumber) {
+                    session.dialogData.policyNumber = policyNumber.entity;
+                    session.send('Okay, let\'s change policy ' + policyNumber.entity + '\'s ' + relation.entity + ' address!');
+                    next({
+                        response: policyNumber.entity
+                    });
+                } else {
+                    builder.Prompts.text(session, 'Sure, but ' + relation.entity + ' of which policy number specifically?');
+                }
+            }
         } else {
-            if (who == "my")
-                session.send('Changing your address...');
-            next();
+            // no entities detected, ask user for a destination
+            session.send('Sorry but I do not understand');
+            session.replaceDialog('addressChange');
         }
     },
     function (session, results) {
+        var answer = results.response;
+        if (session.dialogData.addressChangeType == "own" && !session.dialogData.ownBusRes) {
+            session.dialogData.ownBusRes = answer.entity;
+            session.send('Okay, let\'s change your ' + answer.entity + ' address!');
+        }
+        if ((session.dialogData.addressChangeType == "owner" || session.dialogData.addressChangeType == "insured") && !session.dialogData.policyNumber) {
+            session.dialogData.policyNumber = answer;
+            session.send('Okay, let\'s change policy ' + answer + '\'s ' + session.dialogData.addressChangeType + ' address!');
+        }
+        builder.Prompts.confirm(session, 'Would you like to take a snap of any government ID with address & upload?');
+    },
+    function (session, results) {
+        if (results.response) {
+            builder.Prompts.attachment(session, 'Awesome! please go ahead and upload one.');
+        } else {
+            session.beginDialog('address:/', {
+                promptMessage: 'That\'s no problem, '
+            });
+        }
+    },
+    function (session, results, next) {
+        var self = this;
+        var msg = session.message;
+        if (msg.attachments.length) {
+
+            // Message with attachment, proceed to download it.
+            // Skype & MS Teams attachment URLs are secured by a JwtToken, so we need to pass the token from our bot.
+            var attachment = msg.attachments[0];
+            var fileDownload = checkRequiresToken(msg) ?
+                requestWithToken(attachment.contentUrl) :
+                request(attachment.contentUrl);
+
+            fileDownload.then(
+                function (response) {
+                    var address = "";
+                    var isDL = false;
+                    vision.detectText(response, function (err, text) {
+                        var buildingNoFound = false;
+                        var stateFound = false;
+                        var addressCaptured = false;
+                        var m = false,
+                            d = false,
+                            l = false;
+
+                        Array.from(text).forEach(function (t1) { //for prototype make sure it is a drivers license.
+                            if (t1.toLowerCase() == "driver\'s") d = true;
+                            if (t1.toLowerCase() == "license") l = true;
+                            if (!addressCaptured) {
+                                if (buildingNoFound && stateFound) {
+                                    address = address + " " + t1;
+                                    addressCaptured = true;
+                                } else if (buildingNoFound) {
+                                    address = address + " " + t1;
+                                    if (states.indexOf(t1) != -1) stateFound = true;
+                                } else {
+                                    if (!isNaN(t1)) { //add last name to start capturing address for all states
+                                        address = t1;
+                                        buildingNoFound = true;
+                                    }
+                                }
+                            }
+                        });
+                        if (d && l && address != "") {
+                            var reply = new builder.Message(session)
+                                .text('Address detected in the image is ' + address);
+                            session.send(reply);
+                            session.dialogData.AttachmentAddress = "Found";
+                            session.dialogData.NewAddress = address;
+                            builder.Prompts.confirm(session, "Can I use this as the new address?");
+                        } else {
+                            session.dialogData.AttachmentAddress = "None";
+                            session.beginDialog('address:/', {
+                                promptMessage: 'Sorry, but I could not find an address from the image, '
+                            });
+                        }
+                    })
+                    var reply = new builder.Message(session)
+                        .text('Hang on.. let me grab the address from the image file you uploaded.');
+                    session.send(reply);
+
+                }).catch(function (err) {
+                console.log('Error downloading attachment:', {
+                    statusCode: err.statusCode,
+                    message: err.response.statusMessage
+                });
+            });
+
+        } else {
+            session.dialogData.AttachmentAddress = "None";
+            next({
+                address: results.address
+            });
+        }
+    },
+    function (session, results) {
+        var answer = results.address;
+        if (session.dialogData.AttachmentAddress == "None") {
+            session.dialogData.NewAddress = answer;
+        }
+        var text = "";
+        if (session.dialogData.addressChangeType == "own") {
+            text = `Your new  ${ownBusRes}  `;
+        } else {
+            text = `The new address of the ${session.dialogData.addressChangeType} of the policy ${ session.dialogData.policyNumber} `
+        }
+        var msg = new builder.Message(session).addAttachment(new builder.HeroCard(session)
+            .title('Address Change Completed')
+            .subtitle(`New address: ${session.dialogData.NewAddress}`)
+            .text(`${text} has been updated in our system and a confirmation mail will be sent to the new & old address in 2 business days. Thank you!`)
+            .images([
+                builder.CardImage.create(session, 'http://clipartix.com/wp-content/uploads/2016/04/Smiley-face-clip-art-thumbs-up-free-clipart-images-2-3.png')
+            ]));
+        session.send(msg);
         session.endDialog();
-    }
 
-])
-
-function getFormattedDate(today) {
-    var week = new Array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
-    var day = week[today.getDay()];
-    var dd = today.getDate();
-    var mm = today.getMonth() + 1; //January is 0!
-    var yyyy = today.getFullYear();
-    var hour = today.getHours();
-    var minu = today.getMinutes();
-
-    if (dd < 10) {
-        dd = '0' + dd
     }
-    if (mm < 10) {
-        mm = '0' + mm
+]).triggerAction({
+    matches: 'addresschange',
+    onInterrupted: function (session) {
+        session.send('Please provide a destination');
     }
-    if (minu < 10) {
-        minu = '0' + minu
-    }
+});
 
-    return "Today, " + day + ' - ' + dd + '/' + mm + '/' + yyyy + ' ' + hour + ':' + minu + " HRS";
+bot.dialog('allocationchange', function (session, args) {
+     session.endDialog('Hi! Sorry changing allocations are not yet supported');
+}).triggerAction({
+    matches: 'allocationchange'
+});
+
+bot.dialog('help', function (session) {
+    session.endDialog('Hi! Try telling me things like \'change an address for a policy owner\', \'do an allocation change\'');
+}).triggerAction({
+    matches: 'help'
+});
+
+// Spell Check
+if (true) {
+    bot.use({
+        botbuilder: function (session, next) {
+            spellService
+                .getCorrectedText(session.message.text)
+                .then(function (text) {
+                    session.message.text = text;
+                    next();
+                })
+                .catch(function (error) {
+                    console.error(error);
+                    next();
+                });
+        }
+    });
 }
+
+// Helpers
+function hotelAsAttachment(hotel) {
+    return new builder.HeroCard()
+        .title(hotel.name)
+        .subtitle('%d stars. %d reviews. From $%d per night.', hotel.rating, hotel.numberOfReviews, hotel.priceStarting)
+        .images([new builder.CardImage().url(hotel.image)])
+        .buttons([
+            new builder.CardAction()
+            .title('More details')
+            .type('openUrl')
+            .value('https://www.bing.com/search?q=hotels+in+' + encodeURIComponent(hotel.location))
+        ]);
+}
+
+function reviewAsAttachment(review) {
+    return new builder.ThumbnailCard()
+        .title(review.title)
+        .text(review.text)
+        .images([new builder.CardImage().url(review.image)]);
+}
+
+// Request file with Authentication Header
+var requestWithToken = function (url) {
+    return obtainToken().then(function (token) {
+        return request({
+            url: url,
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/octet-stream'
+            }
+        });
+    });
+};
+
+// Promise for obtaining JWT Token (requested once)
+var obtainToken = Promise.promisify(connector.getAccessToken.bind(connector));
+
+var checkRequiresToken = function (message) {
+    return message.source === 'skype' || message.source === 'msteams';
+};

@@ -1,5 +1,5 @@
 var builder = require('botbuilder');
-var locationDialog = require('botbuilder-location');
+var locationDialog = require('./location/botbuilder-location');
 
 var lib = new builder.Library('address');
 
@@ -21,8 +21,7 @@ lib.dialog('/', [
             reverseGeocode: true,
             requiredFields:
                 locationDialog.LocationRequiredFields.streetAddress |
-                locationDialog.LocationRequiredFields.locality |
-                locationDialog.LocationRequiredFields.country
+                locationDialog.LocationRequiredFields.locality 
         };
 
         locationDialog.getLocation(session, options);
