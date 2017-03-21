@@ -6,7 +6,7 @@ var request = require('request-promise').defaults({
 });
 var botbuilder_azure = require("botbuilder-azure");
 var spellService = require('./services/spell-service');
-var vision = require('.libs/vision/src/index')({
+var vision = require('./libs/vision/src/index')({
     projectId: 'april-web',
     keyFilename: './april-web.json'
 });
