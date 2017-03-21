@@ -6,9 +6,9 @@ var request = require('request-promise').defaults({
 });
 var botbuilder_azure = require("botbuilder-azure");
 var spellService = require('./services/spell-service');
-var vision = require('@google-cloud/vision')({
+var vision = require('.libs/vision/src/index')({
     projectId: 'april-web',
-    keyFilename: './april-web-20e6c722e711.json'
+    keyFilename: './april-web.json'
 });
 var locationDialog = require('botbuilder-location');
 var states = ['MN']; //add all states later on.
@@ -225,7 +225,7 @@ bot.dialog('addresschange', [
 });
 
 bot.dialog('allocationchange', function (session, args) {
-     session.endDialog('Hi! Sorry changing allocations are not yet supported');
+    session.endDialog('Hi! Sorry changing allocations are not yet supported');
 }).triggerAction({
     matches: 'allocationchange'
 });
