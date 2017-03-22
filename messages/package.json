@@ -9,8 +9,10 @@
     "botbuilder": "^3.4.2",
     "botbuilder-azure": "0.0.1",
     "botbuilder-location": "^1.0.4",
+    "btoa": "^1.1.2",
     "dotenv-extended": "^1.0.4",
-    "request": "^2.79.0",
+    "fs": "0.0.1-security",
+    "request": "^2.81.0",
     "restify": "^4.3.0"
   },
   "devDependencies": {
