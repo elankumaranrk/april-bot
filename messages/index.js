@@ -127,8 +127,7 @@ bot.dialog('addresschange', [
         }
     },
     function (session, results, next) {
-        var self = this;
-
+       
         var msg = session.message;
         if (msg.attachments.length > 0) {
             var reply2 = new builder.Message(session)
