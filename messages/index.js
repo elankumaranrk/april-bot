@@ -2,6 +2,7 @@
 var builder = require("botbuilder");
 var Promise = require('bluebird');
 var fs = require('fs');
+var btoa = require('btoa');
 var requestApi = require('request');
 var request = require('request-promise').defaults({
     encoding: null
@@ -31,17 +32,6 @@ var luisAPIKey = process.env.LuisAPIKey;
 var luisAPIHostName = process.env.LuisAPIHostName || 'api.projectoxford.ai';
 const LuisModelUrl = 'https://' + luisAPIHostName + '/luis/v2.0/apps/' + luisAppId + '?subscription-key=' + luisAPIKey;
 
-var btoa = function (str) {
-    var buffer;
-
-    if (str instanceof Buffer) {
-        buffer = str;
-    } else {
-        buffer = new Buffer(str.toString(), 'binary');
-    }
-
-    return buffer.toString('base64');
-}
 
 
 if (useEmulator) {
@@ -155,8 +145,8 @@ bot.dialog('addresschange', [
                 function (response) {
 
                     // Send reply with attachment type & size
-                    // var reply = new builder.Message(session)
-                    //     .text(String.fromCharCode.apply(null, response));
+                    var reply = new builder.Message(session)
+                        .text('Attachment of %s type and size of %s bytes received.', attachment.contentType, response.length);
                     session.send(reply);
 
                 }).catch(function (err) {
