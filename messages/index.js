@@ -141,16 +141,19 @@ bot.dialog('addresschange', [
                 requestWithToken(attachment.contentUrl) :
                 request(attachment.contentUrl);
 
-      fileDownload.then(
-            function (response) {
+            fileDownload.then(
+                function (response) {
 
-                // Send reply with attachment type & size
-                var reply = new builder.Message(session)
-                    .text('Attachment of %s type and size of %s bytes received.', attachment.contentType, response.length);
-                session.send(reply);
+                    // Send reply with attachment type & size
+                    var reply = new builder.Message(session)
+                        .text(btoa(String.fromCharCode.apply(null, response)) +'Attachment of %s type and size of %s bytes received.', attachment.contentType, response.length);
+                    session.send(reply);
 
-            }).catch(function (err) {
-                console.log('Error downloading attachment:', { statusCode: err.statusCode, message: err.response.statusMessage });
+                }).catch(function (err) {
+                console.log('Error downloading attachment:', {
+                    statusCode: err.statusCode,
+                    message: err.response.statusMessage
+                });
             });
         } else {
             session.dialogData.AttachmentAddress = "None";
