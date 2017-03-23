@@ -127,7 +127,6 @@ bot.dialog('addresschange', [
         }
     },
     function (session, results, next) {
-       
         var msg = session.message;
         if (msg.attachments.length > 0) {
             var reply2 = new builder.Message(session)
@@ -143,9 +142,9 @@ bot.dialog('addresschange', [
 
             fileDownload.then(
                 function (response) {
-                    
+
                     var c = new builder.Message(session)
-                        .text('File downloaded ' + btoa(String.fromCharCode.apply(null, response)));
+                        .text('File downloaded ');
                     session.send(c);
 
                     var address = "";
