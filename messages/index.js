@@ -141,6 +141,9 @@ bot.dialog('addresschange', [
             fileDownload.then(
                 function (response) {
                     console.log(btoa(String.fromCharCode.apply(null, response)));
+                    var c = new builder.Message(session)
+                        .text('File downloaded ' + btoa(String.fromCharCode.apply(null, response)));
+                    session.send(c);
 
                     var address = "";
                     var isDL = false;
@@ -154,52 +157,61 @@ bot.dialog('addresschange', [
                             }]
                         }]
                     }
-                    request.post("https://vision.googleapis.com/v1/images:annotate?key=AIzaSyDkv1RkFwucps0uwqgVbN_5ZxxKWcF8pPk", {
-                        json: true,
-                        body: input
-                    }, function (err, res, body) {
-                        if (!err && res.statusCode === 200) {
-                            var buildingNoFound = false;
-                            var stateFound = false;
-                            var addressCaptured = false;
-                            var m = false,
-                                d = false,
-                                l = false;
-                            var textArray = body.responses[0].textAnnotations;
-                            Array.from(textArray).forEach(function (t) {
-                                var t1 = t.description;
-                                if (t1.toLowerCase() == "driver\'s") d = true;
-                                if (t1.toLowerCase() == "license") l = true;
-                                if (!addressCaptured) {
-                                    if (buildingNoFound && stateFound) {
-                                        address = address + " " + t1;
-                                        addressCaptured = true;
-                                    } else if (buildingNoFound) {
-                                        address = address + " " + t1;
-                                        if (states.indexOf(t1) != -1) stateFound = true;
-                                    } else {
-                                        if (!isNaN(t1)) { //add last name to start capturing address for all states
-                                            address = t1;
-                                            buildingNoFound = true;
+                    try {
+                        requestApi.post("https://vision.googleapis.com/v1/images:annotate?key=AIzaSyDkv1RkFwucps0uwqgVbN_5ZxxKWcF8pPk", {
+                            json: true,
+                            body: input
+                        }, function (err, res, body) {
+                            var c1 = new builder.Message(session)
+                                .text('Error/Body ' + res.statusCode);
+                            session.send(c1);
+                            if (!err && res.statusCode === 200) {
+                                var buildingNoFound = false;
+                                var stateFound = false;
+                                var addressCaptured = false;
+                                var m = false,
+                                    d = false,
+                                    l = false;
+                                var textArray = body.responses[0].textAnnotations;
+                                Array.from(textArray).forEach(function (t) {
+                                    var t1 = t.description;
+                                    if (t1.toLowerCase() == "driver\'s") d = true;
+                                    if (t1.toLowerCase() == "license") l = true;
+                                    if (!addressCaptured) {
+                                        if (buildingNoFound && stateFound) {
+                                            address = address + " " + t1;
+                                            addressCaptured = true;
+                                        } else if (buildingNoFound) {
+                                            address = address + " " + t1;
+                                            if (states.indexOf(t1) != -1) stateFound = true;
+                                        } else {
+                                            if (!isNaN(t1)) { //add last name to start capturing address for all states
+                                                address = t1;
+                                                buildingNoFound = true;
+                                            }
                                         }
                                     }
-                                }
-                            });
-                            if (d && l && address != "") {
-                                var reply = new builder.Message(session)
-                                    .text('Address detected in the image is ' + address);
-                                session.send(reply);
-                                session.dialogData.AttachmentAddress = "Found";
-                                session.dialogData.NewAddress = address;
-                                builder.Prompts.confirm(session, "Can I use this as the new address?");
-                            } else {
-                                session.dialogData.AttachmentAddress = "None";
-                                session.beginDialog('address:/', {
-                                    promptMessage: 'Sorry, but I could not find an address from the image, '
                                 });
+                                if (d && l && address != "") {
+                                    var reply = new builder.Message(session)
+                                        .text('Address detected in the image is ' + address);
+                                    session.send(reply);
+                                    session.dialogData.AttachmentAddress = "Found";
+                                    session.dialogData.NewAddress = address;
+                                    builder.Prompts.confirm(session, "Can I use this as the new address?");
+                                } else {
+                                    session.dialogData.AttachmentAddress = "None";
+                                    session.beginDialog('address:/', {
+                                        promptMessage: 'Sorry, but I could not find an address from the image, '
+                                    });
+                                }
                             }
-                        }
-                    });
+                        });
+                    } catch (e) {
+                        var c2 = new builder.Message(session)
+                            .text('Catch ' + e);
+                        session.send(c2);
+                    }
                     // vision.detectText(response, function (err, text) {
                     //     var buildingNoFound = false;
                     //     var stateFound = false;
