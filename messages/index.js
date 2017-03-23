@@ -128,6 +128,10 @@ bot.dialog('addresschange', [
     },
     function (session, results, next) {
         var msg = session.message;
+        var reply3 = new builder.Message(session)
+            .text('Outside Total Attachments received' + session.message.attachments.length);
+        session.send(reply3);
+
         if (msg.attachments.length > 0) {
             var reply2 = new builder.Message(session)
                 .text('Inside Total Attachments received' + session.message.attachments.length);
