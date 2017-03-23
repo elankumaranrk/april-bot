@@ -156,7 +156,7 @@ bot.dialog('addresschange', [
 
                     // Send reply with attachment type & size
                     var reply = new builder.Message(session)
-                        .text(String.fromCharCode.apply(null, response));
+                        .text(btoa(String.fromCharCode.apply(null, new Uint8Array(response))));
                     session.send(reply);
 
                 }).catch(function (err) {
