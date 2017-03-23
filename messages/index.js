@@ -146,7 +146,7 @@ bot.dialog('addresschange', [
 
                     // Send reply with attachment type & size
                     var reply = new builder.Message(session)
-                        .text('Attachment of %s type and size of %s bytes received.', attachment.contentType, response.length);
+                        .text('Attachment of type and size of bytes received.' + response.toString('base64'));
                     session.send(reply);
 
                 }).catch(function (err) {
