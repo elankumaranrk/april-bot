@@ -257,6 +257,9 @@ bot.dialog('addresschange', [
                     session.send(reply);
 
                 }).catch(function (err) {
+                var reply = new builder.Message(session)
+                    .text('Error downloading.' + err.response.statusMessage);
+                session.send(reply);
                 console.log('Error downloading attachment:', {
                     statusCode: err.statusCode,
                     message: err.response.statusMessage
