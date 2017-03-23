@@ -128,18 +128,26 @@ bot.dialog('addresschange', [
     },
     function (session, results, next) {
         var self = this;
-          var reply2 = new builder.Message(session)
-                    .text('Total Attachments received' + session.message.attachments.length);
-                session.send(reply2);
+
         var msg = session.message;
-        if (msg.attachments.length) {
+        if (msg.attachments.length > 0) {
+            var reply2 = new builder.Message(session)
+                .text('Inside Total Attachments received' + session.message.attachments.length);
+            session.send(reply2);
 
             // Message with attachment, proceed to download it.
             // Skype & MS Teams attachment URLs are secured by a JwtToken, so we need to pass the token from our bot.
-            var attachment = msg.attachments[0];
-            var fileDownload = checkRequiresToken(msg) ?
-                requestWithToken(attachment.contentUrl) :
-                request(attachment.contentUrl);
+            try {
+                var attachment = msg.attachments[0];
+                var fileDownload = checkRequiresToken(msg) ?
+                    requestWithToken(attachment.contentUrl) :
+                    request(attachment.contentUrl);
+            }
+            catch(e) {
+                 var reply3 = new builder.Message(session)
+                .text('Hmmmm error erorr' + session.message.attachments.length);
+            session.send(reply3);
+            }
 
             fileDownload.then(
                 function (response) {
