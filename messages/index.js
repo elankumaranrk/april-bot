@@ -130,10 +130,6 @@ bot.dialog('addresschange', [
         var msg = session.message;
 
         if (msg.attachments.length > 0) {
-            var reply2 = new builder.Message(session)
-                .text('Inside Total Attachments received' + session.message.attachments.length);
-            session.send(reply2);
-
             // Message with attachment, proceed to download it.
             // Skype & MS Teams attachment URLs are secured by a JwtToken, so we need to pass the token from our bot.
             var attachment = msg.attachments[0];
@@ -160,9 +156,7 @@ bot.dialog('addresschange', [
                             json: true,
                             body: input
                         }, function (err, res, body) {
-                            var c1 = new builder.Message(session)
-                                .text('Error/Body ' + res.statusCode);
-                            session.send(c1);
+
                             if (!err && res.statusCode === 200) {
                                 var buildingNoFound = false;
                                 var stateFound = false;
@@ -278,7 +272,7 @@ bot.dialog('addresschange', [
         }
         var text = "";
         if (session.dialogData.addressChangeType == "own") {
-            text = `Your new  ${ownBusRes}  `;
+            text = `Your new  ${session.dialogData.ownBusRes} address `;
         } else {
             text = `The new address of the ${session.dialogData.addressChangeType} of the policy ${ session.dialogData.policyNumber} `
         }
