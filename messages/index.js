@@ -128,9 +128,6 @@ bot.dialog('addresschange', [
     },
     function (session, results, next) {
         var msg = session.message;
-        var reply3 = new builder.Message(session)
-            .text('Outside Total Attachments received' + session.message.attachments.length);
-        session.send(reply3);
 
         if (msg.attachments.length > 0) {
             var reply2 = new builder.Message(session)
@@ -144,134 +141,17 @@ bot.dialog('addresschange', [
                 requestWithToken(attachment.contentUrl) :
                 request(attachment.contentUrl);
 
-            fileDownload.then(
-                function (response) {
+      fileDownload.then(
+            function (response) {
 
-                    var c = new builder.Message(session)
-                        .text('File downloaded ');
-                    session.send(c);
-
-                    var address = "";
-                    var isDL = false;
-                    var input = {
-                        "requests": [{
-                            "image": {
-                                "content": btoa(String.fromCharCode.apply(null, response))
-                            },
-                            "features": [{
-                                "type": "TEXT_DETECTION"
-                            }]
-                        }]
-                    }
-                    try {
-                        requestApi.post("https://vision.googleapis.com/v1/images:annotate?key=AIzaSyDkv1RkFwucps0uwqgVbN_5ZxxKWcF8pPk", {
-                            json: true,
-                            body: input
-                        }, function (err, res, body) {
-                            var c1 = new builder.Message(session)
-                                .text('Error/Body ' + res.statusCode);
-                            session.send(c1);
-                            if (!err && res.statusCode === 200) {
-                                var buildingNoFound = false;
-                                var stateFound = false;
-                                var addressCaptured = false;
-                                var m = false,
-                                    d = false,
-                                    l = false;
-                                var textArray = body.responses[0].textAnnotations;
-                                Array.from(textArray).forEach(function (t) {
-                                    var t1 = t.description;
-                                    if (t1.toLowerCase() == "driver\'s") d = true;
-                                    if (t1.toLowerCase() == "license") l = true;
-                                    if (!addressCaptured) {
-                                        if (buildingNoFound && stateFound) {
-                                            address = address + " " + t1;
-                                            addressCaptured = true;
-                                        } else if (buildingNoFound) {
-                                            address = address + " " + t1;
-                                            if (states.indexOf(t1) != -1) stateFound = true;
-                                        } else {
-                                            if (!isNaN(t1)) { //add last name to start capturing address for all states
-                                                address = t1;
-                                                buildingNoFound = true;
-                                            }
-                                        }
-                                    }
-                                });
-                                if (d && l && address != "") {
-                                    var reply = new builder.Message(session)
-                                        .text('Address detected in the image is ' + address);
-                                    session.send(reply);
-                                    session.dialogData.AttachmentAddress = "Found";
-                                    session.dialogData.NewAddress = address;
-                                    builder.Prompts.confirm(session, "Can I use this as the new address?");
-                                } else {
-                                    session.dialogData.AttachmentAddress = "None";
-                                    session.beginDialog('address:/', {
-                                        promptMessage: 'Sorry, but I could not find an address from the image, '
-                                    });
-                                }
-                            }
-                        });
-                    } catch (e) {
-                        var c2 = new builder.Message(session)
-                            .text('Catch ' + e);
-                        session.send(c2);
-                    }
-                    // vision.detectText(response, function (err, text) {
-                    //     var buildingNoFound = false;
-                    //     var stateFound = false;
-                    //     var addressCaptured = false;
-                    //     var m = false,
-                    //         d = false,
-                    //         l = false;
-
-                    //     Array.from(text).forEach(function (t1) { //for prototype make sure it is a drivers license.
-                    //         if (t1.toLowerCase() == "driver\'s") d = true;
-                    //         if (t1.toLowerCase() == "license") l = true;
-                    //         if (!addressCaptured) {
-                    //             if (buildingNoFound && stateFound) {
-                    //                 address = address + " " + t1;
-                    //                 addressCaptured = true;
-                    //             } else if (buildingNoFound) {
-                    //                 address = address + " " + t1;
-                    //                 if (states.indexOf(t1) != -1) stateFound = true;
-                    //             } else {
-                    //                 if (!isNaN(t1)) { //add last name to start capturing address for all states
-                    //                     address = t1;
-                    //                     buildingNoFound = true;
-                    //                 }
-                    //             }
-                    //         }
-                    //     });
-                    //     if (d && l && address != "") {
-                    //         var reply = new builder.Message(session)
-                    //             .text('Address detected in the image is ' + address);
-                    //         session.send(reply);
-                    //         session.dialogData.AttachmentAddress = "Found";
-                    //         session.dialogData.NewAddress = address;
-                    //         builder.Prompts.confirm(session, "Can I use this as the new address?");
-                    //     } else {
-                    //         session.dialogData.AttachmentAddress = "None";
-                    //         session.beginDialog('address:/', {
-                    //             promptMessage: 'Sorry, but I could not find an address from the image, '
-                    //         });
-                    //     }
-                    // })
-                    var reply = new builder.Message(session)
-                        .text('Hang on.. let me grab the address from the image file you uploaded.');
-                    session.send(reply);
-
-                }).catch(function (err) {
+                // Send reply with attachment type & size
                 var reply = new builder.Message(session)
-                    .text('Error downloading.' + err.response.statusMessage);
+                    .text('Attachment of %s type and size of %s bytes received.', attachment.contentType, response.length);
                 session.send(reply);
-                console.log('Error downloading attachment:', {
-                    statusCode: err.statusCode,
-                    message: err.response.statusMessage
-                });
-            });
 
+            }).catch(function (err) {
+                console.log('Error downloading attachment:', { statusCode: err.statusCode, message: err.response.statusMessage });
+            });
         } else {
             session.dialogData.AttachmentAddress = "None";
             next({
