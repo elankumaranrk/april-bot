@@ -290,7 +290,8 @@ bot.dialog('addresschange', [
 ]).triggerAction({
     matches: 'addresschange',
     onInterrupted: function (session) {
-        session.send('Please provide a destination');
+        session.send('Sorry but something went wrong..we need to start over!');
+        session.replaceDialog('addresschange');
     }
 });
 
