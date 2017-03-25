@@ -12,7 +12,8 @@
     "dotenv-extended": "^1.0.4",
     "fs": "0.0.1-security",
     "request": "^2.81.0",
-    "restify": "^4.3.0"
+    "restify": "^4.3.0",
+    "speakeasy": "^2.0.0"
   },
   "devDependencies": {
     "restify": "^4.1.1"

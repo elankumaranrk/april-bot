@@ -4,18 +4,21 @@ var Promise = require('bluebird');
 var fs = require('fs');
 var btoa = require('btoa');
 var requestApi = require('request');
+var botbuilder_azure = require("botbuilder-azure");
+var spellService = require('./services/spell-service');
+var speakeasy = require('speakeasy');
+
+const states = ['MN']; //add all states later on.
+const visionApiUrl = process.env['VisionURL'] + process.env['VisionAPIKey'];
+const luisAppId = process.env.LuisAppId;
+const luisAPIKey = process.env.LuisAPIKey;
+const luisAPIHostName = process.env.LuisAPIHostName || 'api.projectoxford.ai';
+const LuisModelUrl = 'https://' + luisAPIHostName + '/luis/v2.0/apps/' + luisAppId + '?subscription-key=' + luisAPIKey;
+const UserSecret = process.env.UserSecret;
+
 var request = require('request-promise').defaults({
     encoding: null
 });
-var botbuilder_azure = require("botbuilder-azure");
-var spellService = require('./services/spell-service');
-// var vision = require('./libs/vision/src/index')({
-//     projectId: 'april-web',
-//     keyFilename: './april-web.json'
-// });
-// var locationDialog = require('botbuilder-location');
-var states = ['MN']; //add all states later on.
-var visionApiUrl = "https://vision.googleapis.com/v1/images:annotate?key=";
 
 var useEmulator = (process.env.NODE_ENV == 'development');
 var connector = useEmulator ? new builder.ChatConnector() : new botbuilder_azure.BotServiceConnector({
@@ -24,16 +27,6 @@ var connector = useEmulator ? new builder.ChatConnector() : new botbuilder_azure
     stateEndpoint: process.env['BotStateEndpoint'],
     openIdMetadata: process.env['BotOpenIdMetadata']
 });
-var visionApiKey = "AIzaSyDkv1RkFwucps0uwqgVbN_5ZxxKWcF8pPk";
-
-// Make sure you add code to validate these fields
-var luisAppId = process.env.LuisAppId;
-var luisAPIKey = process.env.LuisAPIKey;
-var luisAPIHostName = process.env.LuisAPIHostName || 'api.projectoxford.ai';
-const LuisModelUrl = 'https://' + luisAPIHostName + '/luis/v2.0/apps/' + luisAppId + '?subscription-key=' + luisAPIKey;
-
-
-
 if (useEmulator) {
     var restify = require('restify');
     var server = restify.createServer();
@@ -46,6 +39,8 @@ if (useEmulator) {
         default: connector.listen()
     }
 }
+
+
 var whichAddress = {
     Business: 'Business',
     Residence: 'Residence',
@@ -84,7 +79,8 @@ bot.dialog('addresschange', [
                         session,
                         'Sure, but which address specifically?', [whichAddress.Both, whichAddress.Business, whichAddress.Residence], {
                             maxRetries: 3,
-                            retryPrompt: 'Not a valid option'
+                            retryPrompt: 'Sorry but you don\'t have such an address, try again!',
+                            listStyle: builder.ListStyle.button
                         });
                 }
             } else if (relation.entity == "owner" || relation.entity == "insured") {
@@ -130,8 +126,6 @@ bot.dialog('addresschange', [
         var msg = session.message;
 
         if (msg.attachments.length > 0) {
-            // Message with attachment, proceed to download it.
-            // Skype & MS Teams attachment URLs are secured by a JwtToken, so we need to pass the token from our bot.
             var attachment = msg.attachments[0];
             var fileDownload = checkRequiresToken(msg) ?
                 requestWithToken(attachment.contentUrl) :
@@ -152,7 +146,7 @@ bot.dialog('addresschange', [
                         }]
                     }
                     try {
-                        requestApi.post("https://vision.googleapis.com/v1/images:annotate?key=AIzaSyDkv1RkFwucps0uwqgVbN_5ZxxKWcF8pPk", {
+                        requestApi.post(visionApiUrl, {
                             json: true,
                             body: input
                         }, function (err, res, body) {
@@ -204,46 +198,6 @@ bot.dialog('addresschange', [
                             .text('Catch ' + e);
                         session.send(c2);
                     }
-                    // vision.detectText(response, function (err, text) {
-                    //     var buildingNoFound = false;
-                    //     var stateFound = false;
-                    //     var addressCaptured = false;
-                    //     var m = false,
-                    //         d = false,
-                    //         l = false;
-
-                    //     Array.from(text).forEach(function (t1) { //for prototype make sure it is a drivers license.
-                    //         if (t1.toLowerCase() == "driver\'s") d = true;
-                    //         if (t1.toLowerCase() == "license") l = true;
-                    //         if (!addressCaptured) {
-                    //             if (buildingNoFound && stateFound) {
-                    //                 address = address + " " + t1;
-                    //                 addressCaptured = true;
-                    //             } else if (buildingNoFound) {
-                    //                 address = address + " " + t1;
-                    //                 if (states.indexOf(t1) != -1) stateFound = true;
-                    //             } else {
-                    //                 if (!isNaN(t1)) { //add last name to start capturing address for all states
-                    //                     address = t1;
-                    //                     buildingNoFound = true;
-                    //                 }
-                    //             }
-                    //         }
-                    //     });
-                    //     if (d && l && address != "") {
-                    //         var reply = new builder.Message(session)
-                    //             .text('Address detected in the image is ' + address);
-                    //         session.send(reply);
-                    //         session.dialogData.AttachmentAddress = "Found";
-                    //         session.dialogData.NewAddress = address;
-                    //         builder.Prompts.confirm(session, "Can I use this as the new address?");
-                    //     } else {
-                    //         session.dialogData.AttachmentAddress = "None";
-                    //         session.beginDialog('address:/', {
-                    //             promptMessage: 'Sorry, but I could not find an address from the image, '
-                    //         });
-                    //     }
-                    // })
                     var reply = new builder.Message(session)
                         .text('Hang on.. let me grab the address from the image file you uploaded.');
                     session.send(reply);
@@ -295,9 +249,70 @@ bot.dialog('addresschange', [
     }
 });
 
-bot.dialog('allocationchange', function (session, args) {
-    session.endDialog('Hi! Sorry changing allocations are not yet supported');
-}).triggerAction({
+bot.dialog('allocationchange', [function (session, args, next) {
+    var policynumber = builder.EntityRecognizer.findEntity(args.intent.entities, 'policynumber');
+    if (policynumber) {
+        next({
+            response: policynumber
+        })
+    } else {
+        builder.Prompts.choice(
+            session,
+            'Sure, for which policy specifically? These are eligible policies for an allocation change now!', "70000002|72323792|79238238|79232389|78239023", {
+                maxRetries: 3,
+                retryPrompt: 'Sorry but that is not a valid policy number!',
+                listStyle: builder.ListStyle.list
+            });
+    }
+    // session.endDialog('Hi! Sorry changing allocations are not yet supported');
+}, function (session, results, next) {
+    if (!results.response) {
+        // exhausted attemps and no selection, start over
+        session.send('Ooops! Too many attemps :( But don\'t worry, I\'m handling that exception and you can try again from begining!');
+        return session.endDialog();
+    } else {
+        var policy = results.response;
+        session.dialogData.policy = policy.entity
+        session.send(`Okay, let\'s change your some allocations for policy ${policy.entity}.`);
+        builder.Prompts.text(session, `**2-step Verification.** Please enter the verification code generated by your mobile app. [Problems with your code?](http://example.com)`);
+
+    }
+}, function (session, results, next) {
+    var userToken = results.response;
+
+    var verified = speakeasy.totp.verify({
+        secret: UserSecret,
+        encoding: 'base32',
+        token: userToken
+    });
+    if (verified) {
+        session.dialogData.autheticated = true;
+        next();
+    } else {
+        builder.Prompts.text(session, `Sorry, in correct code. Please try again one more time.`);
+    }
+}, function (session, results, next) {
+    if (!session.dialogData.autheticated) {
+        var userToken = results.response;
+        var verified = speakeasy.totp.verify({
+            secret: UserSecret,
+            encoding: 'base32',
+            token: userToken
+        });
+        if (verified) {
+            session.dialogData.autheticated = true;
+            next();
+        } else {
+            session.send('Ooops! Wrong authencated code again :( But don\'t worry, I\'m handling that exception and you can try again from begining!');
+            return session.endDialog();
+        }
+    }
+    else {
+        next();
+    }
+}, function (session, results, next) {
+    session.send("Okay..so what changes can we do?");
+}]).triggerAction({
     matches: 'allocationchange'
 });
 

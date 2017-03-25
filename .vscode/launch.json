@@ -9,7 +9,10 @@
         "env": {
             "NODE_ENV": "development",
             "LuisAppId": "1a002f66-ebf2-4f7a-a2bb-61b41907342b",
-            "LuisAPIKey": "3e3d8f4c72144829a048b7af57d90f7b"
+            "LuisAPIKey": "3e3d8f4c72144829a048b7af57d90f7b",
+            "VisionURL":"https://vision.googleapis.com/v1/images:annotate?key=",
+            "VisionAPIKey":"AIzaSyDkv1RkFwucps0uwqgVbN_5ZxxKWcF8pPk",
+            "UserSecret" :"IZSECN3CHFHFO5KDKBUS4RLOHF5DEQTC"
         }
     }]
 }
