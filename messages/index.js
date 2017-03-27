@@ -332,11 +332,12 @@ if (true) {
                 var stream = getAudioStreamFromMessage(session.message);
                 speechService.getTextFromAudioStream(stream)
                     .then(function (text) {
-                        session.message.text = text;
+                        session.message.text = session.message.attachments[0].contentType;
                         next();
                     })
                     .catch(function (error) {
                         console.error(error);
+                          session.message.text = error;
                         next();
                     });
             } else {
