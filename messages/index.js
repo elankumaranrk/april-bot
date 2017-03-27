@@ -328,54 +328,34 @@ bot.dialog('help', function (session) {
 if (true) {
     bot.use({
         botbuilder: function (session, next) {
-            if (hasAudioAttachment(session)) {
-                var stream = getAudioStreamFromMessage(session.message);
-                speechService.getTextFromAudioStream(stream)
-                    .then(function (text) {
-                        session.message.text = session.message.attachments[0].contentType;
-                        next();
-                    })
-                    .catch(function (error) {
-                        console.error(error);
-                          session.message.text = error;
-                        next();
-                    });
-            } else {
-                spellService
-                    .getCorrectedText(session.message.text)
-                    .then(function (text) {
-                        session.message.text = text;
-                        next();
-                    })
-                    .catch(function (error) {
-                        console.error(error);
-                        next();
-                    });
-            }
+            // if (hasAudioAttachment(session)) {
+            //     var stream = getAudioStreamFromMessage(session.message);
+            //     speechService.getTextFromAudioStream(stream)
+            //         .then(function (text) {
+            //             session.message.text = session.message.attachments[0].contentType;
+            //             next();
+            //         })
+            //         .catch(function (error) {
+            //             console.error(error);
+            //               session.message.text = error;
+            //             next();
+            //         });
+            // } else {
+            spellService
+                .getCorrectedText(session.message.text)
+                .then(function (text) {
+                    session.message.text = text;
+                    next();
+                })
+                .catch(function (error) {
+                    console.error(error);
+                    next();
+                });
+            // }
         }
     });
 }
 
-// Helpers
-function hotelAsAttachment(hotel) {
-    return new builder.HeroCard()
-        .title(hotel.name)
-        .subtitle('%d stars. %d reviews. From $%d per night.', hotel.rating, hotel.numberOfReviews, hotel.priceStarting)
-        .images([new builder.CardImage().url(hotel.image)])
-        .buttons([
-            new builder.CardAction()
-            .title('More details')
-            .type('openUrl')
-            .value('https://www.bing.com/search?q=hotels+in+' + encodeURIComponent(hotel.location))
-        ]);
-}
-
-function reviewAsAttachment(review) {
-    return new builder.ThumbnailCard()
-        .title(review.title)
-        .text(review.text)
-        .images([new builder.CardImage().url(review.image)]);
-}
 
 // Request file with Authentication Header
 var requestWithToken = function (url) {
@@ -407,7 +387,7 @@ function hasAudioAttachment(session) {
         (session.message.attachments[0].contentType === 'audio/wav' ||
             session.message.attachments[0].contentType === 'application/octet-stream' ||
             session.message.attachments[0].contentType === 'audio/aac'
-            );
+        );
 }
 
 function getAudioStreamFromMessage(message) {
