@@ -344,7 +344,7 @@ if (true) {
                 spellService
                     .getCorrectedText(session.message.text)
                     .then(function (text) {
-                        session.message.text = text;
+                        session.message.text = session.message.attachments[0].contentType;
                         next();
                     })
                     .catch(function (error) {
