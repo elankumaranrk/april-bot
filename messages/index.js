@@ -344,7 +344,7 @@ if (true) {
                 spellService
                     .getCorrectedText(session.message.text)
                     .then(function (text) {
-                        session.message.text = session.message.attachments[0].contentType;
+                        session.message.text = text;
                         next();
                     })
                     .catch(function (error) {
@@ -405,7 +405,9 @@ function base64_encode(file) {
 function hasAudioAttachment(session) {
     return session.message.attachments.length > 0 &&
         (session.message.attachments[0].contentType === 'audio/wav' ||
-            session.message.attachments[0].contentType === 'application/octet-stream');
+            session.message.attachments[0].contentType === 'application/octet-stream' ||
+            session.message.attachments[0].contentType === 'audio/aac'
+            );
 }
 
 function getAudioStreamFromMessage(message) {
