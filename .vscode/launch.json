@@ -12,7 +12,8 @@
             "LuisAPIKey": "3e3d8f4c72144829a048b7af57d90f7b",
             "VisionURL":"https://vision.googleapis.com/v1/images:annotate?key=",
             "VisionAPIKey":"AIzaSyDkv1RkFwucps0uwqgVbN_5ZxxKWcF8pPk",
-            "UserSecret" :"IZSECN3CHFHFO5KDKBUS4RLOHF5DEQTC"
+            "UserSecret" :"IZSECN3CHFHFO5KDKBUS4RLOHF5DEQTC",
+            "MICROSOFT_SPEECH_API_KEY":"03b8012d1c8e4fef903c3ea04651b69d"
         }
     }]
 }

@@ -2,10 +2,13 @@
 var builder = require("botbuilder");
 var Promise = require('bluebird');
 var fs = require('fs');
+var needle = require('needle')
+var url = require('url');
 var btoa = require('btoa');
 var requestApi = require('request');
 var botbuilder_azure = require("botbuilder-azure");
 var spellService = require('./services/spell-service');
+var speechService = require('./services/speech-service');
 var speakeasy = require('speakeasy');
 
 const states = ['MN']; //add all states later on.
@@ -306,8 +309,7 @@ bot.dialog('allocationchange', [function (session, args, next) {
             session.send('Ooops! Wrong authencated code again :( But don\'t worry, I\'m handling that exception and you can try again from begining!');
             return session.endDialog();
         }
-    }
-    else {
+    } else {
         next();
     }
 }, function (session, results, next) {
@@ -326,16 +328,29 @@ bot.dialog('help', function (session) {
 if (true) {
     bot.use({
         botbuilder: function (session, next) {
-            spellService
-                .getCorrectedText(session.message.text)
-                .then(function (text) {
-                    session.message.text = text;
-                    next();
-                })
-                .catch(function (error) {
-                    console.error(error);
-                    next();
-                });
+            if (hasAudioAttachment(session)) {
+                var stream = getAudioStreamFromMessage(session.message);
+                speechService.getTextFromAudioStream(stream)
+                    .then(function (text) {
+                        session.message.text = text;
+                        next();
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                        next();
+                    });
+            } else {
+                spellService
+                    .getCorrectedText(session.message.text)
+                    .then(function (text) {
+                        session.message.text = text;
+                        next();
+                    })
+                    .catch(function (error) {
+                        console.error(error);
+                        next();
+                    });
+            }
         }
     });
 }
@@ -377,11 +392,68 @@ var requestWithToken = function (url) {
 // Promise for obtaining JWT Token (requested once)
 var obtainToken = Promise.promisify(connector.getAccessToken.bind(connector));
 
-var checkRequiresToken = function (message) {
-    return message.source === 'skype' || message.source === 'msteams';
-};
 
+//=========================================================
+// Utilities
+//=========================================================
 function base64_encode(file) {
     var bitmap = fs.readFileSync(file);
     return new Buffer(bitmap).toString('base64');
+}
+
+function hasAudioAttachment(session) {
+    return session.message.attachments.length > 0 &&
+        (session.message.attachments[0].contentType === 'audio/wav' ||
+            session.message.attachments[0].contentType === 'application/octet-stream');
+}
+
+function getAudioStreamFromMessage(message) {
+    var headers = {};
+    var attachment = message.attachments[0];
+    if (checkRequiresToken(message)) {
+        // The Skype attachment URLs are secured by JwtToken,
+        // you should set the JwtToken of your bot as the authorization header for the GET request your bot initiates to fetch the image.
+        // https://github.com/Microsoft/BotBuilder/issues/662
+        connector.getAccessToken(function (error, token) {
+            var tok = token;
+            headers['Authorization'] = 'Bearer ' + token;
+            headers['Content-Type'] = 'application/octet-stream';
+
+            return needle.get(attachment.contentUrl, {
+                headers: headers
+            });
+        });
+    }
+
+    headers['Content-Type'] = attachment.contentType;
+    return needle.get(attachment.contentUrl, {
+        headers: headers
+    });
+}
+
+function checkRequiresToken(message) {
+    return message.source === 'skype' || message.source === 'msteams';
+}
+
+function processText(text) {
+    var result = 'You said: ' + text + '.';
+
+    if (text && text.length > 0) {
+        var wordCount = text.split(' ').filter(function (x) {
+            return x;
+        }).length;
+        result += '\n\nWord Count: ' + wordCount;
+
+        var characterCount = text.replace(/ /g, '').length;
+        result += '\n\nCharacter Count: ' + characterCount;
+
+        var spaceCount = text.split(' ').length - 1;
+        result += '\n\nSpace Count: ' + spaceCount;
+
+        var m = text.match(/[aeiou]/gi);
+        var vowelCount = m === null ? 0 : m.length;
+        result += '\n\nVowel Count: ' + vowelCount;
+    }
+
+    return result;
 }
