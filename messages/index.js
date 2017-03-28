@@ -266,7 +266,7 @@ bot.dialog('allocationchange', [function (session, args, next) {
         } else {
             builder.Prompts.choice(
                 session,
-                `Oops:( looks like ${policynumber.entity} is either not eligible allocation changes now or you don't have the right access. Here are eligible ones!`, "70000002|72323792|79238238|79232389|78239023", {
+                `Oops:( looks like ${policynumber.entity} is either not eligible for allocation changes now or you don't have the right access. Here are eligible ones!`, "70000002|72323792|79238238|79232389|78239023", {
                     maxRetries: 3,
                     retryPrompt: 'Sorry but that is not a valid policy number!',
                     listStyle: builder.ListStyle.list
@@ -284,7 +284,7 @@ bot.dialog('allocationchange', [function (session, args, next) {
     }
     // session.endDialog('Hi! Sorry changing allocations are not yet supported');
 }, function (session, results, next) {
-    if (!results.response) {
+        if (!results.response) {
         // exhausted attemps and no selection, start over
         session.send('Ooops:( Too many attemps :( But don\'t worry, I\'m handling that exception and you can try again from begining!');
         return session.endDialog();
@@ -329,6 +329,59 @@ bot.dialog('allocationchange', [function (session, args, next) {
     }
 }, function (session, results, next) {
     session.send("Okay..so what changes can we do?");
+    var msg = new builder.Message(session)
+        .attachmentLayout(builder.AttachmentLayout.carousel)
+        .attachments([
+            new builder.HeroCard(session)
+            .title("Alphabet Inc Class A")
+            .subtitle("NASDAQ: GOOGL")
+            .images([
+                builder.CardImage.create(session, "http://www.awdnews.com/images/1439681525alphabet.jpg")
+                .tap(builder.CardAction.showImage(session, "https://www.google.com/search?q=alphabet+stock")),
+            ])
+            .text("(Yesterday) Open:   $828.09  | High:   $841.38   | Low:  $824.30")
+            .buttons([
+                builder.CardAction.imBack(session, "Alphabet", "Select Alphabet Inc")
+            ]),
+            new builder.HeroCard(session)
+            .title("Tesla Inc")
+            .subtitle("NASDAQ: TSLA")
+            .images([
+                builder.CardImage.create(session, "https://pbs.twimg.com/profile_images/489192650474414080/4RxZxsud.png")
+                .tap(builder.CardAction.showImage(session, "https://www.google.com/search?q=tesla+stock")),
+            ])
+            .text("(Yesterday) Open:   $260.60  | High:   $270.57   | Low:  $259.75")
+            .buttons([
+                builder.CardAction.imBack(session, "Tesla", "Select Tesla")
+            ]),
+            new builder.HeroCard(session)
+            .title("Starbucks Corporation")
+            .subtitle("NASDAQ: SBUX")
+            .images([
+                builder.CardImage.create(session, "https://yt3.ggpht.com/-IpBltZ2knJs/AAAAAAAAAAI/AAAAAAAAAAA/p44jq28WcWI/s900-c-k-no-mo-rj-c0xffffff/photo.jpg")
+                .tap(builder.CardAction.showImage(session, "https://www.google.com/search?q=starbucks+stock"))
+            ])
+            .text("(Yesterday) Open:   $56.66  | High:   $57.45   | Low:  $56.46")
+            .buttons([
+                builder.CardAction.imBack(session, "Starbucks", "Select Starbucks")
+            ])
+        ]);
+    builder.Prompts.choice(session, msg, "Alphabet|Tesla|Starbucks");
+}, function (session, results, next) {
+    var action, item;
+    var kv = results.response.entity;
+    switch (kv) {
+        case 'Alphabet':
+            item = "Alphabet Inc";
+            break;
+        case 'Tesla':
+            item = "Tesla Inc";
+            break;  
+        case 'Starbucks':
+            item = "Starbucks Corporation";
+            break;
+    }
+    session.endDialog('You selected "%s"', item);
 }]).triggerAction({
     matches: 'allocationchange'
 }).cancelAction('cancel', "Ok then, allocation changes cancelled :)", {
@@ -374,6 +427,9 @@ if (true) {
         }
     });
 }
+bot.endConversationAction('goodbye', 'Goodbye :)', {
+    matches: /^goodbye/i
+});
 
 
 // Request file with Authentication Header
