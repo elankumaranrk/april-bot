@@ -284,7 +284,7 @@ bot.dialog('allocationchange', [function (session, args, next) {
     }
     // session.endDialog('Hi! Sorry changing allocations are not yet supported');
 }, function (session, results, next) {
-        if (!results.response) {
+    if (!results.response) {
         // exhausted attemps and no selection, start over
         session.send('Ooops:( Too many attemps :( But don\'t worry, I\'m handling that exception and you can try again from begining!');
         return session.endDialog();
@@ -328,7 +328,8 @@ bot.dialog('allocationchange', [function (session, args, next) {
         next();
     }
 }, function (session, results, next) {
-    session.send("Okay..so what changes can we do?");
+
+    session.send("Here are the high performing stocks this month");
     var msg = new builder.Message(session)
         .attachmentLayout(builder.AttachmentLayout.carousel)
         .attachments([
@@ -336,7 +337,7 @@ bot.dialog('allocationchange', [function (session, args, next) {
             .title("Alphabet Inc Class A")
             .subtitle("NASDAQ: GOOGL")
             .images([
-                builder.CardImage.create(session, "http://www.awdnews.com/images/1439681525alphabet.jpg")
+                builder.CardImage.create(session, "https://preview.ibb.co/nH1ZFa/a.png")
                 .tap(builder.CardAction.showImage(session, "https://www.google.com/search?q=alphabet+stock")),
             ])
             .text("(Yesterday) Open:   $828.09  | High:   $841.38   | Low:  $824.30")
@@ -347,7 +348,7 @@ bot.dialog('allocationchange', [function (session, args, next) {
             .title("Tesla Inc")
             .subtitle("NASDAQ: TSLA")
             .images([
-                builder.CardImage.create(session, "https://pbs.twimg.com/profile_images/489192650474414080/4RxZxsud.png")
+                builder.CardImage.create(session, "https://preview.ibb.co/iRKzgF/t.png")
                 .tap(builder.CardAction.showImage(session, "https://www.google.com/search?q=tesla+stock")),
             ])
             .text("(Yesterday) Open:   $260.60  | High:   $270.57   | Low:  $259.75")
@@ -358,7 +359,7 @@ bot.dialog('allocationchange', [function (session, args, next) {
             .title("Starbucks Corporation")
             .subtitle("NASDAQ: SBUX")
             .images([
-                builder.CardImage.create(session, "https://yt3.ggpht.com/-IpBltZ2knJs/AAAAAAAAAAI/AAAAAAAAAAA/p44jq28WcWI/s900-c-k-no-mo-rj-c0xffffff/photo.jpg")
+                builder.CardImage.create(session, "https://preview.ibb.co/eeHkMF/s.png")
                 .tap(builder.CardAction.showImage(session, "https://www.google.com/search?q=starbucks+stock"))
             ])
             .text("(Yesterday) Open:   $56.66  | High:   $57.45   | Low:  $56.46")
@@ -366,6 +367,7 @@ bot.dialog('allocationchange', [function (session, args, next) {
                 builder.CardAction.imBack(session, "Starbucks", "Select Starbucks")
             ])
         ]);
+    session.send("Okay so how do you want it to look like? Send me in [percentage:NASDAQ code] format seperated by commas. Ex: 30:GOOGL, 40:TSLA");
     builder.Prompts.choice(session, msg, "Alphabet|Tesla|Starbucks");
 }, function (session, results, next) {
     var action, item;
@@ -376,7 +378,7 @@ bot.dialog('allocationchange', [function (session, args, next) {
             break;
         case 'Tesla':
             item = "Tesla Inc";
-            break;  
+            break;
         case 'Starbucks':
             item = "Starbucks Corporation";
             break;
