@@ -334,26 +334,26 @@ bot.dialog('allocationchange', [function (session, args, next) {
         .attachmentLayout(builder.AttachmentLayout.carousel)
         .attachments([
             new builder.HeroCard(session)
-            .title("Alphabet Inc Class A")
-            .subtitle("NASDAQ: GOOGL")
+            .title("PIMCO High Income Fund")
+            .subtitle("NYSE: PHK")
             .images([
-                builder.CardImage.create(session, "https://preview.ibb.co/nH1ZFa/a.png")
-                .tap(builder.CardAction.showImage(session, "https://www.google.com/search?q=alphabet+stock")),
+                builder.CardImage.create(session, "https://preview.ibb.co/nH1ZFa/pimco.png")
+                .tap(builder.CardAction.showImage(session, "https://www.google.com/search?q=NYSE%3A+PHK")),
             ])
             .text("(Yesterday) Open:   $828.09  | High:   $841.38   | Low:  $824.30")
             .buttons([
-                builder.CardAction.imBack(session, "Alphabet", "Select Alphabet Inc")
+                builder.CardAction.imBack(session, "PIMCO", "Select PIMCO")
             ]),
             new builder.HeroCard(session)
-            .title("Tesla Inc")
-            .subtitle("NASDAQ: TSLA")
+            .title("Franklin Resources, Inc.")
+            .subtitle("NYSE: BEN")
             .images([
-                builder.CardImage.create(session, "https://preview.ibb.co/iRKzgF/t.png")
-                .tap(builder.CardAction.showImage(session, "https://www.google.com/search?q=tesla+stock")),
+                builder.CardImage.create(session, "https://preview.ibb.co/iRKzgF/Franklin.png")
+                .tap(builder.CardAction.showImage(session, "https://www.google.com/search?q=NYSE%3A+BEN")),
             ])
             .text("(Yesterday) Open:   $260.60  | High:   $270.57   | Low:  $259.75")
             .buttons([
-                builder.CardAction.imBack(session, "Tesla", "Select Tesla")
+                builder.CardAction.imBack(session, "Franklin", "Select Franklin")
             ]),
             new builder.HeroCard(session)
             .title("Starbucks Corporation")
@@ -367,7 +367,7 @@ bot.dialog('allocationchange', [function (session, args, next) {
                 builder.CardAction.imBack(session, "Starbucks", "Select Starbucks")
             ])
         ]);
-    session.send("Okay so how do you want it to look like? Send me in [percentage:NASDAQ code] format seperated by commas. Ex: 30:GOOGL, 40:TSLA");
+    session.send("Okay so how do you want it to look like? Send me in [percentage:NYSE/NASDAQ code] format seperated by commas. Ex: 30:BEN, 40:PHK");
     builder.Prompts.choice(session, msg, "Alphabet|Tesla|Starbucks");
 }, function (session, results, next) {
     var action, item;
